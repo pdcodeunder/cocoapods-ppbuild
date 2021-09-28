@@ -27,6 +27,9 @@ use_frameworks!
 use_dynamic_binary!
 ````
 #### 2. 如果某个库不想使用预编译加参数 :ppbuild => false
+````ruby
+pod 'PPNetworking', :ppbuild => false
+````
 #### 3. 可以设置编译参数，默认不设置 例如：
 ````ruby
 set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARCHS_STANDARD)"
