@@ -4,43 +4,44 @@
 
 ## 背景
 	
-	随着项目的不断迭代，项目代码及依赖三方库和内部库越来越多，导致项目编译时间越来越长，浪费大量开发时间。cocoapods-ppbuild插件将三方库打包为静态库，从而提高项目编译时间
+随着项目的不断迭代，项目代码及依赖三方库和内部库越来越多，导致项目编译时间越来越长，浪费大量开发时间。
+cocoapods-ppbuild插件将三方库打包为静态库，从而提高项目编译时间
 
 ## 插入
 ````shell
-		$ gem install cocoapods-ppbuild
+$ gem install cocoapods-ppbuild
 ````
 
 ## 使用
-	修改 podfile 文件，加入以下代码
+修改 podfile 文件，加入以下代码
 #### 1. 使用静态库编译：
 ````ruby
-      use_frameworks! :linkage => :static
-      use_static_binary!
+use_frameworks! :linkage => :static
+use_static_binary!
 ````
-	    使用动态库编译(动态库会拖累app使用时间，推荐使用静态库)：
+使用动态库编译(动态库会拖累app使用时间，推荐使用静态库)：
 ````ruby
-      use_frameworks!
-      use_dynamic_binary!
+use_frameworks!
+use_dynamic_binary!
 ````
 #### 2. 如果某个库不想使用预编译加参数 :ppbuild => false
 #### 3. 可以设置编译参数，默认不设置 例如：
 ````ruby
-    set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARCHS_STANDARD)"
+set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARCHS_STANDARD)"
 ````
 #### 4. 设置编译完成后移除源码，默认保存
 ````ruby
-	remove_source_code_for_prebuilt_frameworks!
+remove_source_code_for_prebuilt_frameworks!
 ````
 
 ## 缺点
 
 #### 1. 目前是直接将静态库引入至Pods中，导致项目会将二进制文件提交到工程git仓库中。
-		解决方案：
-			将 Pods 文件夹添加至gitignore中，忽略Pods中所有文件
-			pod文件项目成员可以单独编译，或者共享一份单独存放二进制的git库，使用脚本编译上传
+解决方案：
+	将 Pods 文件夹添加至gitignore中，忽略Pods中所有文件
+	pod文件项目成员可以单独编译，或者共享一份单独存放二进制的git库，使用脚本编译上传
 #### 2. 如果使用单独git仓库存放二进制文件，调试时没有索引源码文件，定位不到源码
-		解决方案：参考美团zsource插件
+解决方案：参考美团zsource插件
 
 ## 参考
 
