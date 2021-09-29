@@ -62,6 +62,7 @@ module Pod
                 
                 target_names.each do |name|
 
+                    Pod::UI.puts "...........   oname: #{name}"
                     # symbol link copy all substructure
                     real_file_folder = prebuild_sandbox.framework_folder_path_for_target_name(name)
                     
@@ -111,6 +112,7 @@ module Pod
                             if object.real_file_path != nil
                                 real_path = Pathname.new(object.target_file_path)
                                 real_path.rmtree if real_path.exist?
+                                Pod::UI.puts "...........   object.target_file_path: #{object.target_file_path}"
                                 make_link(object.real_file_path, object.target_file_path, false)
                             end
                         end
@@ -135,15 +137,13 @@ module Pod
         # Remove the old target files if prebuild frameworks changed
         def remove_target_files_if_needed
 
-            changes = Pod::Prebuild::Passer.prebuild_pods_changes
+            changes = Pod::Prebuild::Passer.prebuild_pod_targets_changes
             updated_names = []
             if changes == nil
                 updated_names = PrebuildSandbox.from_standard_sandbox(self.sandbox).exsited_framework_pod_names
             else
-                added = changes.added
-                changed = changes.changed 
-                deleted = changes.deleted 
-                updated_names = added + changed + deleted
+                t_names = changes.map { |e| e.pod_name }
+                updated_names = (updated_names + t_names).uniq
             end
 
             updated_names.each do |name|
@@ -164,7 +164,6 @@ module Pod
         # Modify specification to use only the prebuild framework after analyzing
         old_method2 = instance_method(:resolve_dependencies)
         define_method(:resolve_dependencies) do
-
             # Remove the old target files, else it will not notice file changes
             self.remove_target_files_if_needed
 

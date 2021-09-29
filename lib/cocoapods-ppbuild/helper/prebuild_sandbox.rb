@@ -67,13 +67,21 @@ module Pod
             exsited_framework_name_pairs.select {|pair| pair[1] == pod_name }.map { |pair| pair[0]}
         end
 
-
+        def existed_target_version_for_pod_name(pod_name)
+            folder = framework_folder_path_for_target_name(pod_name)
+            return "" unless folder.exist?
+            flag_file_path = folder + "#{pod_name}.pod_name"
+            return "" unless flag_file_path.exist?
+            version = File.read(flag_file_path)
+            Pod::UI.puts "............  version: #{version}"
+            version
+        end
 
         def save_pod_name_for_target(target)
             folder = framework_folder_path_for_target_name(target.name)
             return unless folder.exist?
             flag_file_path = folder + "#{target.pod_name}.pod_name"
-            File.write(flag_file_path.to_s, "")
+            File.write(flag_file_path.to_s, "#{target.version}")
         end
 
         def real_bundle_path_for_pod(path)

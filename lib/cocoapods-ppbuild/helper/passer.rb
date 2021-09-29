@@ -14,7 +14,7 @@ module Pod
             # @return [Analyzer::SpecsState] 
             #
             class_attr_accessor :prebuild_pods_changes
-
+            class_attr_accessor :prebuild_pod_targets_changes
 
             # represent the path of resurces to copy
             class ResourcePath
