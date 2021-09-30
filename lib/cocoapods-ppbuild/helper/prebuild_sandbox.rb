@@ -73,7 +73,6 @@ module Pod
             flag_file_path = folder + "#{pod_name}.pod_name"
             return "" unless flag_file_path.exist?
             version = File.read(flag_file_path)
-            Pod::UI.puts "............  version: #{version}"
             version
         end
 
@@ -115,3 +114,22 @@ module Pod
         end
     end
 end
+
+module Pod
+    class Sandbox
+        # hook 清除pod方法，得到删除的pod，通知主pod更新
+        clean_method = instance_method(:clean_pod)
+        define_method(:clean_pod) do |pod_name|
+            if Pod::is_prebuild_stage
+                if Pod::Prebuild::Passer.prebuild_pod_targets_changes.nil?
+                    Pod::Prebuild::Passer.prebuild_pod_targets_changes = [pod_name]
+                else
+                    Pod::Prebuild::Passer.prebuild_pod_targets_changes = (Pod::Prebuild::Passer.prebuild_pod_targets_changes + [pod_name]).uniq
+                end
+            end
+            clean_method.bind(self).(pod_name)
+        end
+    end
+end
+
+

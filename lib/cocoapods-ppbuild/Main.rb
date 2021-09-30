@@ -116,7 +116,7 @@ Pod::HooksManager.register('cocoapods-ppbuild', :pre_install) do |installer_cont
     require_relative 'helper/prebuild_sandbox'
     require_relative 'Prebuild'
     
-    Pod::UI.puts "火速编译中..."
+    # Pod::UI.puts "火速编译中..."
     
     # Fetch original installer (which is running this pre-install hook) options,
     # then pass them to our installer to perform update if needed
@@ -148,7 +148,8 @@ Pod::HooksManager.register('cocoapods-ppbuild', :pre_install) do |installer_cont
     # install
     lockfile = installer_context.lockfile
     binary_installer = Pod::Installer.new(prebuild_sandbox, prebuild_podfile, lockfile)
-    
+
+    require_relative 'Integration'
     if binary_installer.have_exact_prebuild_cache? && !update
         binary_installer.install_when_cache_hit!
     else
@@ -170,7 +171,6 @@ Pod::HooksManager.register('cocoapods-ppbuild', :pre_install) do |installer_cont
     # install
     Pod::UI.puts "\n"
     Pod::UI.puts "🤖  Pod Install"
-    require_relative 'Integration'
     # go on the normal install step ...
 end
 

@@ -62,43 +62,6 @@ module Pod
                 UI.puts "Using #{name}"
             end
         end
-        
-        def save_change_targets!
-            sandbox_path = sandbox.root
-            existed_framework_folder = sandbox.generate_framework_path
-            
-            if local_manifest != nil
-                changes = prebuild_pods_changes
-                added = changes.added
-                changed = changes.changed 
-                unchanged = changes.unchanged
-                deleted = changes.deleted.to_a
-    
-                existed_framework_folder.mkdir unless existed_framework_folder.exist?
-                exsited_framework_pod_names = sandbox.exsited_framework_pod_names
-    
-                # additions
-                missing = unchanged.select do |pod_name|
-                    not exsited_framework_pod_names.include?(pod_name)
-                end
-
-                # 保存有改变的target列表
-                root_names_to_update = (added + changed + missing).uniq
-                updates_target_names = (root_names_to_update + deleted).uniq
-                cache = []
-                updates_targets = []
-                updates_target_names.each do |pod_name|
-                    tars = Pod.fast_get_targets_for_pod_name(pod_name, self.pod_targets, cache)
-                    if tars.nil? || tars.empty?
-                        Pod::UI.puts "There's no target named (#{pod_name}) in Pod.xcodeproj." if t.nil?
-                    else
-                        updates_targets = (updates_targets + tars).uniq
-                    end 
-                end
-                updates_dependency_targets = updates_targets.map {|t| t.recursive_dependent_targets }.flatten.uniq || []
-                Pod::Prebuild::Passer.prebuild_pod_targets_changes = (updates_targets + updates_dependency_targets).uniq
-            end
-        end
 
         # Build the needed framework files
         def prebuild_frameworks! 
@@ -128,8 +91,8 @@ module Pod
                 cache = []
                 targets = root_names_to_update.map do |pod_name|
                     tars = Pod.fast_get_targets_for_pod_name(pod_name, self.pod_targets, cache)
-                    if tars.nil? || tars.empty?
-                        raise "There's no target named (#{pod_name}) in Pod.xcodeproj.\n #{self.pod_targets.map(&:name)}" if t.nil?
+                    if tars.nil?
+                        tars = []
                     end
                     tars
                 end.flatten
@@ -261,13 +224,10 @@ module Pod
             end
         end
 
-        # patch the post install hook
-        old_method2 = instance_method(:run_plugins_post_install_hooks)
+        # hook run_plugins_post_install_hooks 方法
+        install_hooks_method = instance_method(:run_plugins_post_install_hooks)
         define_method(:run_plugins_post_install_hooks) do 
-            if Pod::is_prebuild_stage
-                self.save_change_targets!
-            end
-            old_method2.bind(self).()
+            install_hooks_method.bind(self).()
             if Pod::is_prebuild_stage
                 self.prebuild_frameworks!
             end

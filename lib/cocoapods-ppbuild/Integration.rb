@@ -61,8 +61,6 @@ module Pod
                 end
                 
                 target_names.each do |name|
-
-                    Pod::UI.puts "...........   oname: #{name}"
                     # symbol link copy all substructure
                     real_file_folder = prebuild_sandbox.framework_folder_path_for_target_name(name)
                     
@@ -112,7 +110,6 @@ module Pod
                             if object.real_file_path != nil
                                 real_path = Pathname.new(object.target_file_path)
                                 real_path.rmtree if real_path.exist?
-                                Pod::UI.puts "...........   object.target_file_path: #{object.target_file_path}"
                                 make_link(object.real_file_path, object.target_file_path, false)
                             end
                         end
@@ -142,8 +139,13 @@ module Pod
             if changes == nil
                 updated_names = PrebuildSandbox.from_standard_sandbox(self.sandbox).exsited_framework_pod_names
             else
-                t_names = changes.map { |e| e.pod_name }
-                updated_names = (updated_names + t_names).uniq
+                t_changes = Pod::Prebuild::Passer.prebuild_pods_changes
+                added = t_changes.added
+                changed = t_changes.changed 
+                deleted = t_changes.deleted 
+                updated_names = (added + changed + deleted).to_a
+
+                updated_names = (changes + updated_names).uniq
             end
 
             updated_names.each do |name|
@@ -160,87 +162,133 @@ module Pod
 
         end
 
+        def save_change_targets!
+            sandbox_path = sandbox.root
+            existed_framework_folder = sandbox.generate_framework_path
+            if local_manifest != nil
+                changes = prebuild_pods_changes
+                added = changes.added
+                changed = changes.changed 
+                unchanged = changes.unchanged
+                deleted = changes.deleted.to_a
+    
+                existed_framework_folder.mkdir unless existed_framework_folder.exist?
+                exsited_framework_pod_names = sandbox.exsited_framework_pod_names
+    
+                # additions
+                missing = unchanged.select do |pod_name|
+                    not exsited_framework_pod_names.include?(pod_name)
+                end
+
+                # 保存有改变的target列表
+                root_names_to_update = (added + changed + missing).uniq
+                updates_target_names = (root_names_to_update + deleted).uniq
+                cache = []
+                updates_targets = []
+                updates_target_names.each do |pod_name|
+                    tars = Pod.fast_get_targets_for_pod_name(pod_name, self.pod_targets, cache)
+                    if tars.nil?
+                        tars = []
+                    end
+                    updates_targets = (updates_targets + tars).uniq 
+                end
+                updates_dependency_targets = updates_targets.map {|t| 
+                    t.recursive_dependent_targets 
+                }.flatten.uniq || []
+                dependency_names = updates_dependency_targets.map { |e| e.pod_name }
+                if Pod::Prebuild::Passer.prebuild_pod_targets_changes.nil?
+                    Pod::Prebuild::Passer.prebuild_pod_targets_changes = (updates_target_names + dependency_names).uniq
+                else
+                    Pod::Prebuild::Passer.prebuild_pod_targets_changes = (Pod::Prebuild::Passer.prebuild_pod_targets_changes + updates_target_names + dependency_names).uniq
+                end
+            end
+        end
 
         # Modify specification to use only the prebuild framework after analyzing
         old_method2 = instance_method(:resolve_dependencies)
         define_method(:resolve_dependencies) do
-            # Remove the old target files, else it will not notice file changes
-            self.remove_target_files_if_needed
+            if Pod::is_prebuild_stage
+                # call original
+                old_method2.bind(self).()
+                self.save_change_targets!
+            else
+                # Remove the old target files, else it will not notice file changes
+                self.remove_target_files_if_needed
+                # call original
+                old_method2.bind(self).()
+                 # ...
+                # ...
+                # ...
+                # after finishing the very complex orginal function
 
-            # call original
-            old_method2.bind(self).()
-            # ...
-            # ...
-            # ...
-            # after finishing the very complex orginal function
+                # check the pods
+                # Although we have did it in prebuild stage, it's not sufficient.
+                # Same pod may appear in another target in form of source code.
+                # Prebuild.check_one_pod_should_have_only_one_target(self.prebuild_pod_targets)
+                self.validate_every_pod_only_have_one_form
 
-            # check the pods
-            # Although we have did it in prebuild stage, it's not sufficient.
-            # Same pod may appear in another target in form of source code.
-            # Prebuild.check_one_pod_should_have_only_one_target(self.prebuild_pod_targets)
-            self.validate_every_pod_only_have_one_form
+                
+                # prepare
+                cache = []
 
-            
-            # prepare
-            cache = []
-
-            def add_vendered_framework(spec, platform, added_framework_file_path)
-                if spec.attributes_hash[platform] == nil
-                    spec.attributes_hash[platform] = {}
+                def add_vendered_framework(spec, platform, added_framework_file_path)
+                    if spec.attributes_hash[platform] == nil
+                        spec.attributes_hash[platform] = {}
+                    end
+                    vendored_frameworks = spec.attributes_hash[platform]["vendored_frameworks"] || []
+                    vendored_frameworks = [vendored_frameworks] if vendored_frameworks.kind_of?(String)
+                    vendored_frameworks += [added_framework_file_path]
+                    spec.attributes_hash[platform]["vendored_frameworks"] = vendored_frameworks
                 end
-                vendored_frameworks = spec.attributes_hash[platform]["vendored_frameworks"] || []
-                vendored_frameworks = [vendored_frameworks] if vendored_frameworks.kind_of?(String)
-                vendored_frameworks += [added_framework_file_path]
-                spec.attributes_hash[platform]["vendored_frameworks"] = vendored_frameworks
-            end
-            def empty_source_files(spec)
-                spec.attributes_hash["source_files"] = []
-                ["ios", "watchos", "tvos", "osx"].each do |plat|
-                    if spec.attributes_hash[plat] != nil
-                        spec.attributes_hash[plat]["source_files"] = []
+                def empty_source_files(spec)
+                    spec.attributes_hash["source_files"] = []
+                    ["ios", "watchos", "tvos", "osx"].each do |plat|
+                        if spec.attributes_hash[plat] != nil
+                            spec.attributes_hash[plat]["source_files"] = []
+                        end
                     end
                 end
-            end
 
 
-            specs = self.analysis_result.specifications
-            prebuilt_specs = (specs.select do |spec|
-                self.prebuild_pod_names.include? spec.root.name
-            end)
+                specs = self.analysis_result.specifications
+                prebuilt_specs = (specs.select do |spec|
+                    self.prebuild_pod_names.include? spec.root.name
+                end)
 
-            prebuilt_specs.each do |spec|
+                prebuilt_specs.each do |spec|
 
-                # Use the prebuild framworks as vendered frameworks
-                # get_corresponding_targets
-                targets = Pod.fast_get_targets_for_pod_name(spec.root.name, self.pod_targets, cache)
-                targets.each do |target|
-                    # the framework_file_path rule is decided when `install_for_prebuild`,
-                    # as to compitable with older version and be less wordy.
-                    framework_file_path = target.framework_name
-                    framework_file_path = target.name + "/" + framework_file_path if targets.count > 1
-                    add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
+                    # Use the prebuild framworks as vendered frameworks
+                    # get_corresponding_targets
+                    targets = Pod.fast_get_targets_for_pod_name(spec.root.name, self.pod_targets, cache)
+                    targets.each do |target|
+                        # the framework_file_path rule is decided when `install_for_prebuild`,
+                        # as to compitable with older version and be less wordy.
+                        framework_file_path = target.framework_name
+                        framework_file_path = target.name + "/" + framework_file_path if targets.count > 1
+                        add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
+                    end
+                    # Clean the source files
+                    # we just add the prebuilt framework to specific platform and set no source files 
+                    # for all platform, so it doesn't support the sence that 'a pod perbuild for one
+                    # platform and not for another platform.'
+                    empty_source_files(spec)
+
+                    # to remove the resurce bundle target. 
+                    # When specify the "resource_bundles" in podspec, xcode will generate a bundle 
+                    # target after pod install. But the bundle have already built when the prebuit
+                    # phase and saved in the framework folder. We will treat it as a normal resource
+                    # file.
+                    if spec.attributes_hash["resource_bundles"]
+                        bundle_names = spec.attributes_hash["resource_bundles"].keys
+                        spec.attributes_hash["resource_bundles"] = nil 
+                        spec.attributes_hash["resources"] ||= []
+                        spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                    end
+
+                    # to avoid the warning of missing license
+                    spec.attributes_hash["license"] = {}
+
                 end
-                # Clean the source files
-                # we just add the prebuilt framework to specific platform and set no source files 
-                # for all platform, so it doesn't support the sence that 'a pod perbuild for one
-                # platform and not for another platform.'
-                empty_source_files(spec)
-
-                # to remove the resurce bundle target. 
-                # When specify the "resource_bundles" in podspec, xcode will generate a bundle 
-                # target after pod install. But the bundle have already built when the prebuit
-                # phase and saved in the framework folder. We will treat it as a normal resource
-                # file.
-                if spec.attributes_hash["resource_bundles"]
-                    bundle_names = spec.attributes_hash["resource_bundles"].keys
-                    spec.attributes_hash["resource_bundles"] = nil 
-                    spec.attributes_hash["resources"] ||= []
-                    spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
-                end
-
-                # to avoid the warning of missing license
-                spec.attributes_hash["license"] = {}
-
             end
 
         end
@@ -249,22 +297,24 @@ module Pod
         # Override the download step to skip download and prepare file in target folder
         old_method = instance_method(:install_source_of_pod)
         define_method(:install_source_of_pod) do |pod_name|
-
-            # copy from original
-            pod_installer = create_pod_installer(pod_name)
-            # \copy from original
-
-            if self.prebuild_pod_names.include? pod_name
-                pod_installer.install_for_prebuild!(self.sandbox)
+            if Pod::is_prebuild_stage
+                tmp = old_method.bind(self).(pod_name)
             else
-                pod_installer.install!
+                # copy from original
+                pod_installer = create_pod_installer(pod_name)
+                # \copy from original
+
+                if self.prebuild_pod_names.include? pod_name
+                    pod_installer.install_for_prebuild!(self.sandbox)
+                else
+                    pod_installer.install!
+                end
+
+                # copy from original
+                return @installed_specs.concat(pod_installer.specs_by_platform.values.flatten.uniq)
+                # \copy from original
             end
-
-            # copy from original
-            @installed_specs.concat(pod_installer.specs_by_platform.values.flatten.uniq)
-            # \copy from original
         end
-
 
     end
 end
@@ -278,33 +328,34 @@ end
 module Pod
     module Generator
         class EmbedFrameworksScript
-
             old_method = instance_method(:script)
             define_method(:script) do
-
                 script = old_method.bind(self).()
-                patch = <<-SH.strip_heredoc
-                    #!/bin/sh
-                
-                    # ---- this is added by cocoapods-ppbuild ---
-                    # Readlink cannot handle relative symlink well, so we override it to a new one
-                    # If the path isn't an absolute path, we add a realtive prefix.
-                    old_read_link=`which readlink`
-                    readlink () {
-                        path=`$old_read_link "$1"`;
-                        if [ $(echo "$path" | cut -c 1-1) = '/' ]; then
-                            echo $path;
-                        else
-                            echo "`dirname $1`/$path";
-                        fi
-                    }
-                    # --- 
-                SH
+                if not Pod::is_prebuild_stage
+                    patch = <<-SH.strip_heredoc
+                        #!/bin/sh
+                    
+                        # ---- this is added by cocoapods-ppbuild ---
+                        # Readlink cannot handle relative symlink well, so we override it to a new one
+                        # If the path isn't an absolute path, we add a realtive prefix.
+                        old_read_link=`which readlink`
+                        readlink () {
+                            path=`$old_read_link "$1"`;
+                            if [ $(echo "$path" | cut -c 1-1) = '/' ]; then
+                                echo $path;
+                            else
+                                echo "`dirname $1`/$path";
+                            fi
+                        }
+                        # --- 
+                    SH
 
-                # patch the rsync for copy dSYM symlink
-                script = script.gsub "rsync --delete", "rsync --copy-links --delete"
-                
-                patch + script
+                    # patch the rsync for copy dSYM symlink
+                    script = script.gsub "rsync --delete", "rsync --copy-links --delete"
+                    
+                    script = patch + script
+                end
+                script
             end
         end
     end
