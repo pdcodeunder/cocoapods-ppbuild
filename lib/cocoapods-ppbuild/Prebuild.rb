@@ -120,6 +120,7 @@ module Pod
                 end
 
                 output_path = sandbox.framework_folder_path_for_target_name(target.name)
+                output_path.rmtree if output_path.exist?
                 output_path.mkpath unless output_path.exist?
                 Pod::Prebuild.build(sandbox_path, target, output_path, bitcode_enabled,  Podfile::DSL.custom_build_options,  Podfile::DSL.custom_build_options_simulator)
 
