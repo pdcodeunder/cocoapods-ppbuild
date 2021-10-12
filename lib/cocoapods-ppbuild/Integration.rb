@@ -51,7 +51,10 @@ module Pod
                             FileUtils.cp_r source, target, :remove_destination => true
                         else
                             FileUtils.cp source, target
-                        end        
+                        end
+                        if not target.exist?
+                            raise "资源导入失败：#{target}"
+                        end
                     end
                 end
 
@@ -74,8 +77,7 @@ module Pod
                     end
                     target_folder.rmtree if target_folder.exist?
                     target_folder.mkpath
-
-
+                    
                     walk(real_file_folder) do |child|
                         source = child
 
@@ -283,6 +285,11 @@ module Pod
                         spec.attributes_hash["resource_bundles"] = nil 
                         spec.attributes_hash["resources"] ||= []
                         spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                    elsif spec.attributes_hash['ios']["resource_bundles"]
+                        bundle_names = spec.attributes_hash['ios']["resource_bundles"].keys
+                        spec.attributes_hash['ios']["resource_bundles"] = nil 
+                        spec.attributes_hash['ios']["resources"] ||= []
+                        spec.attributes_hash['ios']["resources"] += bundle_names.map{|n| n+".bundle"}
                     end
 
                     # to avoid the warning of missing license
