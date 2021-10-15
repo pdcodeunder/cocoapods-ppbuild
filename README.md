@@ -53,7 +53,7 @@ set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARC
 remove_source_code_for_prebuilt_frameworks!
 ````
 
-## 缺点
+## 注意
 
 #### 1. 目前是直接将静态库引入至Pods中，导致项目会将二进制文件提交到工程git仓库中。
 解决方案：
