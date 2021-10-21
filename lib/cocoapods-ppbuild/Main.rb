@@ -177,9 +177,9 @@ Pod::HooksManager.register('cocoapods-ppbuild', :post_install) do |installer_con
         Pod::PrebuildSandbox.replace_tagert_copy_source_sh(installer_context)
     end
 
-    require_relative 'Reference/reference_source_code'
-
-    installer_context.refrence_source_code
-
+    if Podfile::DSL.dont_remove_source_code 
+        require_relative 'Reference/reference_source_code'
+        installer_context.refrence_source_code
+    end
 end
 

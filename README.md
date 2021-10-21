@@ -1,6 +1,6 @@
 # cocoapods-ppbuild
 
-利用cocoapods，生成预编译静态库，提高编译速度的插件
+利用cocoapods，生成预编译静态库，提高编译速度的插件。真正支持编译使用静态库提高速度，调试直接使用源码，方便调试
 
 ## 背景
 	
@@ -53,14 +53,14 @@ set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARC
 remove_source_code_for_prebuilt_frameworks!
 ````
 
+## 源码调试
+
+不要设置 `remove_source_code_for_prebuilt_frameworks!` 选项，保留源码
+源码将会放入pod工程 `SourceCode` 文件夹下，可以直接进行源码调试功能
+
 ## 注意
 
-#### 1. 目前是直接将静态库引入至Pods中，导致项目会将二进制文件提交到工程git仓库中。
-解决方案：
-	将 Pods 文件夹添加至gitignore中，忽略Pods中所有文件
-	pod文件项目成员可以单独编译，或者共享一份单独存放二进制的git库，使用脚本编译上传
-#### 2. 如果使用单独git仓库存放二进制文件，调试时没有索引源码文件，定位不到源码
-解决方案：参考美团zsource插件
+目前是直接将静态库引入至Pods中，注意将Pods添加到gitignore中，否则将会提交至git仓库中
 
 ## 参考
 
