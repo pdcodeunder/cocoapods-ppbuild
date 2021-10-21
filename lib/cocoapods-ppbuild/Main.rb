@@ -86,9 +86,6 @@ module Pod
             class_attr_accessor :custom_build_options_simulator
             self.custom_build_options = []
             self.custom_build_options_simulator = []
-
-            class_attr_accessor :static_build_pod_names
-            self.static_build_pod_names = []
         end
     end
 end
@@ -179,6 +176,10 @@ Pod::HooksManager.register('cocoapods-ppbuild', :post_install) do |installer_con
     if Pod::Podfile::DSL.static_binary
         Pod::PrebuildSandbox.replace_tagert_copy_source_sh(installer_context)
     end
-    
+
+    require_relative 'Reference/reference_source_code'
+
+    installer_context.refrence_source_code
+
 end
 

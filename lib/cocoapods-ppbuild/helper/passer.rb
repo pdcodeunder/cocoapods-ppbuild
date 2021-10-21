@@ -36,6 +36,10 @@ module Pod
             class_attr_accessor :target_names_to_skip_integration_framework
             self.target_names_to_skip_integration_framework = []
 
+            # 编译过的framework pod 名称
+            class_attr_accessor :static_build_pod_names
+            self.static_build_pod_names = []
+
         end
     end
 end
