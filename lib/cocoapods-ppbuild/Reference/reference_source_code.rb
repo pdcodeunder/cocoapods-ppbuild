@@ -15,7 +15,7 @@ module Pod
 	    		proj_path = sandbox_path + get_project_name("Pods")
 	    		project = Xcodeproj::Project.open(proj_path)
     			exsited_framework_pod_names.each do |target_name|
-	    			real_reference("_Prebuild/#{target_name}", proj_path, target_name)
+	    			real_reference("_Prebuild/#{target_name}", project, target_name)
 	    		end
 	    		project.save;
 	    	end

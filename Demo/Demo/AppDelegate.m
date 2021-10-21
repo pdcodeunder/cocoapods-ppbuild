@@ -4,6 +4,7 @@
 //  
 
 #import "AppDelegate.h"
+@import AFNetworking;
 
 @interface AppDelegate ()
 
@@ -14,6 +15,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    [AFHTTPSessionManager manager];
     return YES;
 }
 
