@@ -234,13 +234,20 @@ module Pod
                 cache = []
 
                 def add_vendered_framework(spec, platform, added_framework_file_path)
-                    if spec.attributes_hash[platform] == nil
-                        spec.attributes_hash[platform] = {}
+                    platform_map = spec.attributes_hash[platform]
+                    if platform_map == nil
+                        platform_map = {}
                     end
-                    vendored_frameworks = spec.attributes_hash[platform]["vendored_frameworks"] || []
+                    vendored_frameworks = platform_map["vendored_frameworks"] || []
                     vendored_frameworks = [vendored_frameworks] if vendored_frameworks.kind_of?(String)
+                    vf = spec.attributes_hash["vendored_frameworks"] || []
+                    vf = [vf] if vf.kind_of?(String)
+                    vendored_frameworks += vf
                     vendored_frameworks += [added_framework_file_path]
-                    spec.attributes_hash[platform]["vendored_frameworks"] = vendored_frameworks
+                    spec.attributes_hash["vendored_frameworks"] = vendored_frameworks
+                    if spec.attributes_hash[platform] != nil
+                        spec.attributes_hash[platform].delete("vendored_frameworks")
+                    end
                 end
                 def empty_source_files(spec)
                     spec.attributes_hash["source_files"] = []
@@ -280,12 +287,13 @@ module Pod
                     # target after pod install. But the bundle have already built when the prebuit
                     # phase and saved in the framework folder. We will treat it as a normal resource
                     # file.
+
                     if spec.attributes_hash["resource_bundles"]
                         bundle_names = spec.attributes_hash["resource_bundles"].keys
                         spec.attributes_hash["resource_bundles"] = nil 
                         spec.attributes_hash["resources"] ||= []
                         spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
-                    elsif spec.attributes_hash['ios']["resource_bundles"]
+                    elsif spec.attributes_hash['ios'] && spec.attributes_hash['ios']["resource_bundles"]
                         bundle_names = spec.attributes_hash['ios']["resource_bundles"].keys
                         spec.attributes_hash['ios']["resource_bundles"] = nil 
                         spec.attributes_hash['ios']["resources"] ||= []
