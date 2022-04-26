@@ -14,17 +14,11 @@ $ gem install cocoapods-ppbuild
 
 ## 使用
 修改 podfile 文件，加入以下代码
-#### 1. 使用静态库编译：
+#### 1. 添加编译选项：
 ````ruby
 plugin 'cocoapods-ppbuild'
 use_frameworks! :linkage => :static
 use_static_binary!
-````
-使用动态库编译(动态库会拖累app启动时间，推荐使用静态库)：
-````ruby
-plugin 'cocoapods-ppbuild'
-use_frameworks!
-use_dynamic_binary!
 ````
 #### 2. 如果某个库不想使用预编译加参数 :ppbuild => false
 ````ruby
