@@ -20,7 +20,7 @@ plugin 'cocoapods-ppbuild'
 use_frameworks! :linkage => :static
 use_static_binary!
 ````
-使用动态库编译(动态库会拖累app使用时间，推荐使用静态库)：
+使用动态库编译(动态库会拖累app启动时间，推荐使用静态库)：
 ````ruby
 plugin 'cocoapods-ppbuild'
 use_frameworks!
