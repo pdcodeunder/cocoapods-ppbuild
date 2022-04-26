@@ -17,6 +17,8 @@ module Pod
     			exsited_framework_pod_names.each do |target_name|
 	    			real_reference("_Prebuild/#{target_name}", project, target_name)
 	    		end
+	    		group = project.main_group.find_subpath(File.join("SourceCode"), true)
+	    		group.sort_by_type
 	    		project.save;
 	    	end
 
@@ -34,14 +36,14 @@ module Pod
 
 	    	#添加文件链接
 			def add_files_to_group(group)
-			  Dir.foreach(group.real_path) do |entry|
-			    filePath = File.join(group.real_path, entry)
-			    # 过滤目录和.DS_Store文件
-			    if entry != ".DS_Store" && !filePath.to_s.end_with?(".meta") &&entry != "." &&entry != ".." then
-			    	# 向group中增加文件引用
-					group.new_reference(filePath)
+				Dir.foreach(group.real_path) do |entry|
+					filePath = File.join(group.real_path, entry)
+					# 过滤目录和.DS_Store文件
+					if entry != ".DS_Store" && !filePath.to_s.end_with?(".meta") &&entry != "." &&entry != ".." then
+						# 向group中增加文件引用
+						group.new_reference(filePath)
+					end
 				end
-			  end
 			end
 	    end
 	end
