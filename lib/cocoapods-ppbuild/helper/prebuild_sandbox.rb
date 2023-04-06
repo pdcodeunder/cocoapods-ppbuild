@@ -119,7 +119,7 @@ module Pod
     class Sandbox
         # hook 清除pod方法，得到删除的pod，通知主pod更新
         clean_method = instance_method(:clean_pod)
-        define_method(:clean_pod) do |pod_name|
+        define_method(:clean_pod) do |pod_name, *args|
             if Pod::is_prebuild_stage
                 if Pod::Prebuild::Passer.prebuild_pod_targets_changes.nil?
                     Pod::Prebuild::Passer.prebuild_pod_targets_changes = [pod_name]
@@ -127,9 +127,26 @@ module Pod
                     Pod::Prebuild::Passer.prebuild_pod_targets_changes = (Pod::Prebuild::Passer.prebuild_pod_targets_changes + [pod_name]).uniq
                 end
             end
-            clean_method.bind(self).(pod_name)
+            clean_method.bind(self).(pod_name, *args)
         end
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

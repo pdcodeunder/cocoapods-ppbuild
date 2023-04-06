@@ -22,11 +22,8 @@ use_static_binary!
 # use_dynamic_binary!
 
 target 'Demo' do
-  # Comment the next line if you don't want to use dynamic frameworks
-
-  # Pods for Demo
-
-  pod 'AFNetworking'
-  pod 'Masonry', :ppbuild => false
+  pod 'AFNetworking', '3.2.1'
+#  pod 'AFNetworking'
+#  pod 'Masonry', :ppbuild => false
 
 end

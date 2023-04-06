@@ -290,14 +290,30 @@ module Pod
 
                     if spec.attributes_hash["resource_bundles"]
                         bundle_names = spec.attributes_hash["resource_bundles"].keys
-                        spec.attributes_hash["resource_bundles"] = nil 
-                        spec.attributes_hash["resources"] ||= []
-                        spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                        spec.attributes_hash["resource_bundles"] = nil
+                        resources_list = spec.attributes_hash["resources"]
+                        if resources_list.class == Array
+                            spec.attributes_hash["resources"] ||= []
+                            spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                        elsif resources_list.class == String 
+                            spec.attributes_hash["resources"] = Array(resources_list)
+                            spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                        else
+                            spec.attributes_hash["resources"] = bundle_names.map{|n| n+".bundle"}
+                        end
                     elsif spec.attributes_hash['ios'] && spec.attributes_hash['ios']["resource_bundles"]
                         bundle_names = spec.attributes_hash['ios']["resource_bundles"].keys
                         spec.attributes_hash['ios']["resource_bundles"] = nil 
-                        spec.attributes_hash['ios']["resources"] ||= []
-                        spec.attributes_hash['ios']["resources"] += bundle_names.map{|n| n+".bundle"}
+                        resources_list = spec.attributes_hash['ios']["resources"]
+                        if resources_list.class == Array
+                            spec.attributes_hash['ios']["resources"] ||= []
+                            spec.attributes_hash['ios']["resources"] += bundle_names.map{|n| n+".bundle"}
+                        elsif resources_list.class == String 
+                            spec.attributes_hash['ios']["resources"] = Array(resources_list)
+                            spec.attributes_hash['ios']["resources"] += bundle_names.map{|n| n+".bundle"}
+                        else
+                            spec.attributes_hash['ios']["resources"] = bundle_names.map{|n| n+".bundle"}
+                        end
                     end
 
                     # to avoid the warning of missing license

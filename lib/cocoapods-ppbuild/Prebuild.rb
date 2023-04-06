@@ -226,8 +226,8 @@ module Pod
 
         # hook run_plugins_post_install_hooks 方法
         install_hooks_method = instance_method(:run_plugins_post_install_hooks)
-        define_method(:run_plugins_post_install_hooks) do 
-            install_hooks_method.bind(self).()
+        define_method(:run_plugins_post_install_hooks) do |*args|
+            install_hooks_method.bind(self).(*args)
             if Pod::is_prebuild_stage
                 self.prebuild_frameworks!
             end
