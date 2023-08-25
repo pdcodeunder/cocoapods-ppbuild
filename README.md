@@ -14,13 +14,17 @@ $ gem install cocoapods-ppbuild
 
 ## 使用
 修改 podfile 文件，加入以下代码
-#### 1. 添加编译选项：
+#### 添加编译选项：
 ````ruby
 plugin 'cocoapods-ppbuild'
 use_frameworks! :linkage => :static
 use_static_binary!
 ````
-#### 2. 如果某个库不想使用预编译加参数 :ppbuild => false
+运行`pod instll`
+
+## 扩展功能
+
+#### 1. 如果某个库不想使用预编译加参数 :ppbuild => false
 ````ruby
 pod 'AFNetworking', :ppbuild => false
 ````
@@ -38,11 +42,11 @@ pod 'YTKNetwork', :ppbuild => false
 pod 'AFNetworking'
 ````
 
-#### 3. 可以设置编译参数，默认不设置 例如：
+#### 2. 可以设置编译参数，默认不设置 例如：
 ````ruby
 set_custom_xcodebuild_options_for_prebuilt_frameworks :simulator => "ARCHS=$(ARCHS_STANDARD)"
 ````
-#### 4. 设置编译完成后移除源码，默认保存
+#### 3. 设置编译完成后移除源码，默认保存
 ````ruby
 remove_source_code_for_prebuilt_frameworks!
 ````
