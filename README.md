@@ -7,7 +7,7 @@
 随着项目的不断迭代，项目代码及依赖三方库和内部库越来越多，导致项目编译时间越来越长，浪费大量开发时间。
 cocoapods-ppbuild插件将三方库打包为静态库，从而提高项目编译时间
 
-## 插入
+## 安装
 ````shell
 $ gem install cocoapods-ppbuild
 ````
