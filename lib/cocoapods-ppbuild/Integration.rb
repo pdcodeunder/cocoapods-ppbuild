@@ -364,19 +364,17 @@ module Pod
                 script = old_method.bind(self).()
                 if not Pod::is_prebuild_stage
                     patch = <<-SH.strip_heredoc
-                        #!/bin/sh
-                    
                         # ---- this is added by cocoapods-ppbuild ---
-                        # Readlink cannot handle relative symlink well, so we override it to a new one
-                        # If the path isn't an absolute path, we add a realtive prefix.
-                        old_read_link=`which readlink`
+                        # If -f appears anywhere, path is the last arg (handles readlink -f path, readlink -f -n path, readlink -n -f path).
                         readlink () {
-                            path=`$old_read_link "$1"`;
-                            if [ $(echo "$path" | cut -c 1-1) = '/' ]; then
-                                echo $path;
-                            else
-                                echo "`dirname $1`/$path";
-                            fi
+                            for _r_arg in "\$@"; do
+                                if [ "\$_r_arg" = "-f" ]; then
+                                    for _r_arg in "\$@"; do _r_path="\$_r_arg"; done
+                                    [ -n "\$_r_path" ] && ruby -e "puts File.realpath(ARGV[0])" "\$_r_path"
+                                    return
+                                fi
+                            done
+                            /usr/bin/readlink "\$@"
                         }
                         # --- 
                     SH
